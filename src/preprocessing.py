@@ -138,6 +138,7 @@ def consolidate_intersections(
         cluster_centroids_df, crs=graph_crs, geometry=cluster_geometries
     )
     cluster_nodes_list = list(cluster_gdf.to_dict("index").items())
+    
     # Rebuild edges if necessary:
     if rebuild_graph:
         graph.graph["approach"] = "primal"
@@ -396,9 +397,13 @@ def _spider_simplification(geometry, new_origin, new_destination, buff=15):
                 geometry_split_by_buffer = linemerge(geometry_split_by_buffer_list[1:])
                 splitting_point = geometry_split_by_buffer.boundary[0]
             # Merge this into new geometry:
-            geometry = linemerge(
-                [LineString([new_origin, splitting_point]), geometry_split_by_buffer]
-            )
+            additional_line = [LineString([new_origin, splitting_point])]
+            #Consider MultiLineStrings separately:
+            if geometry_split_by_buffer.geom_type == 'MultiLineString':
+                geometry = linemerge(additional_line + [line for line in geometry_split_by_buffer.geoms])
+            else:
+                geometry = linemerge(additional_line + [geometry_split_by_buffer])
+                
         if new_destination is not None:
             # Create a buffer around the new destination:
             new_destination_buffer = new_destination.buffer(buff)
@@ -418,12 +423,13 @@ def _spider_simplification(geometry, new_origin, new_destination, buff=15):
                 geometry_split_by_buffer = linemerge(geometry_split_by_buffer_list[:-1])
                 splitting_point = geometry_split_by_buffer.boundary[1]
             # Merge this into new geometry:
-            geometry = linemerge(
-                [
-                    geometry_split_by_buffer,
-                    LineString([splitting_point, new_destination]),
-                ]
-            )
+            additional_line = [LineString([splitting_point, new_destination])]
+            #Consider MultiLineStrings separately:
+            if geometry_split_by_buffer.geom_type == 'MultiLineString':
+                geometry = linemerge([line for line in geometry_split_by_buffer.geoms] + additional_line)
+            else:
+                geometry = linemerge([geometry_split_by_buffer] + additional_line)
+                
     return geometry
 
 
@@ -460,4 +466,3 @@ def _euclidean_simplification(geometry, new_origin, new_destination):
             if new_destination is not None:
                 geometry = LineString([current_origin, new_destination])
     return geometry
-
