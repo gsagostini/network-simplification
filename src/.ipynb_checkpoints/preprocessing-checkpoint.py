@@ -20,7 +20,7 @@ from copy import deepcopy
 from shapely.geometry import LineString, Point
 from shapely.ops import linemerge, split
 
-from .shape import CircularCompactness
+import momepy as mm
 
 def consolidate_intersections(
     graph,
@@ -63,7 +63,7 @@ def consolidate_intersections(
         distance in network units below which nodes will be consolidated
     rebuild_graph: Boolean
     rebuild_edges_method: string
-        'extension' or 'spider' or 'euclidean'
+        'extend' or 'spider' or 'euclidean'
     directed: Boolean or None
         consider the graph a MultiDiGraph if True or MultiGraph if False, and
         if None infer from the passed object type
